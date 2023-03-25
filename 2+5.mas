@@ -1,0 +1,8 @@
+/ 2+5 adds 2 with 5 and prints the output.
+Load x		/ load from location x (address 0x4) to the accumulator
+Add y		/ Load from location x (address 0x4)
+Output		/ print the output.
+Halt
+
+x, HEX FFFF
+y, DEC 5
