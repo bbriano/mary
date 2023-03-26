@@ -14,10 +14,12 @@ import (
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintln(os.Stderr, "Usage: maria file")
+		os.Exit(1)
 	}
 	f, err := os.Open(os.Args[1])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	defer f.Close()
 	m := &Machine{}
@@ -46,13 +48,13 @@ type Machine struct {
 	M [1 << 12]Word // 12-bit addressing
 }
 
-// Word is the width of Marie's data bus.
-type Word uint16
+// Word is the machine's 16 bit data bus.
+type Word int
 
 // minWordInt is the minimum integer that can be represented with a Word (-32768).
 const minWordInt = -1 << 15
 
-// maxWordInt is the maximum integer that can be represented with a Word (-65535).
+// maxWordInt is the maximum integer that can be represented with a Word (65535).
 const maxWordInt = 1<<16 - 1
 
 // Run starts execution of the program stored in the machine's memory.
@@ -163,7 +165,6 @@ func (m *Machine) Load(r io.Reader) {
 			}
 			m.M[addr] = Word(opcode[instruction] << 12)
 			n, err := strconv.Atoi(number)
-			fmt.Println(n, minWordInt, maxWordInt)
 			if err != nil || n < minWordInt || n > maxWordInt {
 				syntaxerr(line)
 			}
@@ -263,6 +264,5 @@ func hashTokenTypes(ttypes ...TokenType) string {
 
 func syntaxerr(line string) {
 	fmt.Fprintln(os.Stderr, "syntax error:", line)
-	panic("syntaxerr")
 	os.Exit(1)
 }

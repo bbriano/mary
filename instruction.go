@@ -117,7 +117,7 @@ func Input(m *Machine, _ Word) {
 
 func Output(m *Machine, _ Word) {
 	m.OUT = m.AC
-	fmt.Printf("%x\n", m.OUT)
+	fmt.Printf("%04x\n", m.OUT)
 }
 
 func Halt(m *Machine, _ Word) {
