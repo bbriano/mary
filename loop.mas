@@ -1,0 +1,19 @@
+/ Loop prints 0000..FFFF
+
+start,	Load i
+		Output
+		Add one
+		Store i
+		/ if (i < n) goto start;
+		Load i
+		Subt n
+		Skipcond 0
+		Jump end
+		Jump start
+end,		Load i
+		Output
+		Halt
+
+n,		HEX FFFF
+one,		DEC 1
+i,		DEC 0
