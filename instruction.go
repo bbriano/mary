@@ -15,47 +15,42 @@ type Opcode int
 
 // opcode maps operation string literals to opcode values.
 // It is used to parse Marie assembly code in Machine.Load.
-var opcode map[string]Opcode
+var opcode map[string]Opcode = map[string]Opcode{
+	"JnS":      OpJnS,
+	"Load":     OpLoad,
+	"Store":    OpStore,
+	"Add":      OpAdd,
+	"Subt":     OpSubt,
+	"Input":    OpInput,
+	"Output":   OpOutput,
+	"Halt":     OpHalt,
+	"Skipcond": OpSkipcond,
+	"Jump":     OpJump,
+	"Clear":    OpClear,
+	"AddI":     OpAddI,
+	"JumpI":    OpJumpI,
+	"LoadI":    OpLoadI,
+	"StoreI":   OpStoreI,
+}
 
 // instruction maps opcode to Instruction functions.
 // It is used to decode the machine code in Machine.Run.
-var instruction map[Opcode]Instruction
-
-func init() {
-	opcode = map[string]Opcode{
-		"JnS":      OpJnS,
-		"Load":     OpLoad,
-		"Store":    OpStore,
-		"Add":      OpAdd,
-		"Subt":     OpSubt,
-		"Input":    OpInput,
-		"Output":   OpOutput,
-		"Halt":     OpHalt,
-		"Skipcond": OpSkipcond,
-		"Jump":     OpJump,
-		"Clear":    OpClear,
-		"AddI":     OpAddI,
-		"JumpI":    OpJumpI,
-		"LoadI":    OpLoadI,
-		"StoreI":   OpStoreI,
-	}
-	instruction = map[Opcode]Instruction{
-		OpJnS:      JnS,
-		OpLoad:     Load,
-		OpStore:    Store,
-		OpAdd:      Add,
-		OpSubt:     Subt,
-		OpInput:    Input,
-		OpOutput:   Output,
-		OpHalt:     Halt,
-		OpSkipcond: Skipcond,
-		OpJump:     Jump,
-		OpClear:    Clear,
-		OpAddI:     AddI,
-		OpJumpI:    JumpI,
-		OpLoadI:    LoadI,
-		OpStoreI:   StoreI,
-	}
+var instruction map[Opcode]Instruction = map[Opcode]Instruction{
+	OpJnS:      JnS,
+	OpLoad:     Load,
+	OpStore:    Store,
+	OpAdd:      Add,
+	OpSubt:     Subt,
+	OpInput:    Input,
+	OpOutput:   Output,
+	OpHalt:     Halt,
+	OpSkipcond: Skipcond,
+	OpJump:     Jump,
+	OpClear:    Clear,
+	OpAddI:     AddI,
+	OpJumpI:    JumpI,
+	OpLoadI:    LoadI,
+	OpStoreI:   StoreI,
 }
 
 const (
@@ -101,15 +96,17 @@ func Subt(m *Machine, x Word) {
 }
 
 func Input(m *Machine, _ Word) {
-	var x int
+	var x int64
 	s := bufio.NewScanner(os.Stdin)
+	fmt.Print("> ")
 	for s.Scan() {
 		var err error
 		hex := s.Text()
-		x, err = strconv.Atoi(hex)
-		if err == nil {
+		x, err = strconv.ParseInt(hex, 16, 0)
+		if err == nil && minWordInt <= x && x <= maxWordInt {
 			break
 		}
+		fmt.Print("> ")
 	}
 	m.IN = Word(x)
 	m.AC = m.IN

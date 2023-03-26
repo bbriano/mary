@@ -1,5 +1,7 @@
-/ Loop prints 0000..FFFF
+/ Loop prints 0000..N-1
 
+		Input
+		Store n
 start,	Load i
 		Output
 		Add one
@@ -10,10 +12,8 @@ start,	Load i
 		Skipcond 0
 		Jump end
 		Jump start
-end,		Load i
-		Output
-		Halt
+end,		Halt
 
-n,		HEX FFFF
-one,		DEC 1
-i,		DEC 0
+n,		HEX 0
+i,		HEX 0
+one,		HEX 1

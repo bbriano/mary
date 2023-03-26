@@ -51,11 +51,11 @@ type Machine struct {
 // Word is the machine's 16 bit data bus.
 type Word int
 
-// minWordInt is the minimum integer that can be represented with a Word (-32768).
-const minWordInt = -1 << 15
+// minWordInt is the minimum integer that can be represented with a Word.
+const minWordInt = -1 << 15 // -32768
 
-// maxWordInt is the maximum integer that can be represented with a Word (65535).
-const maxWordInt = 1<<16 - 1
+// maxWordInt is the maximum integer that can be represented with a Word.
+const maxWordInt = 0xFFFF // 65535
 
 // Run starts execution of the program stored in the machine's memory.
 func (m *Machine) Run() {
@@ -78,8 +78,10 @@ func (m *Machine) Load(r io.Reader) {
 	}
 	lines := strings.Split(string(raw), "\n")
 
-	// Construct symbolic table mapping identifier to address of identifier label.
+	// symtab is mapping identifier to address of identifier label.
 	symtab := make(map[string]Word)
+
+	// first pass; fill symtab.
 	var addr Word
 	for _, line := range lines {
 		tokens := tokenize(line)
@@ -100,7 +102,7 @@ func (m *Machine) Load(r io.Reader) {
 		}
 	}
 
-	// second pass. fill m.M
+	// second pass; fill m.M.
 	addr = 0
 	for _, line := range lines {
 		tokens := tokenize(line)
@@ -164,7 +166,7 @@ func (m *Machine) Load(r io.Reader) {
 				syntaxerr(line)
 			}
 			m.M[addr] = Word(opcode[instruction] << 12)
-			n, err := strconv.Atoi(number)
+			n, err := strconv.ParseInt(number, 16, 0)
 			if err != nil || n < minWordInt || n > maxWordInt {
 				syntaxerr(line)
 			}
@@ -182,7 +184,7 @@ func (m *Machine) Load(r io.Reader) {
 			default:
 				panic("unreachable")
 			}
-			n, err := strconv.ParseInt(number, base, 17)
+			n, err := strconv.ParseInt(number, base, 0)
 			if err != nil || n < minWordInt || n > maxWordInt {
 				syntaxerr(line)
 			}
