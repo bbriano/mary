@@ -10,12 +10,33 @@ import (
 // Instruction corresponds to a single machine instruction in a Marie machine.
 type Instruction func(*Machine, Word)
 
-// Each function defined in this file of type Instruction.
+// Opcode is the 4-bit operation code of an instruction.
+type Opcode int
 
-// instruction provides convenient access to Instruction functions.
+// opcode maps operation string literals to opcode values.
+// It is used to parse Marie assembly code in Machine.Load.
+var opcode map[string]Opcode
+
+// instruction maps opcode to Instruction functions.
+// It is used to decode the machine code in Machine.Run.
 var instruction map[Opcode]Instruction
 
 func init() {
+	opcode = map[string]Opcode{
+		"JnS":      OpJnS,
+		"Load":     OpLoad,
+		"Store":    OpStore,
+		"Add":      OpAdd,
+		"Subt":     OpSubt,
+		"Input":    OpInput,
+		"Output":   OpOutput,
+		"Halt":     OpHalt,
+		"Skipcond": OpSkipcond,
+		"Jump":     OpJump,
+		"Clear":    OpClear,
+		"AddI":     OpAddI,
+		"JumpI":    OpJumpI,
+	}
 	instruction = map[Opcode]Instruction{
 		OpJnS:      JnS,
 		OpLoad:     Load,
@@ -32,6 +53,22 @@ func init() {
 		OpJumpI:    JumpI,
 	}
 }
+
+const (
+	OpJnS Opcode = iota
+	OpLoad
+	OpStore
+	OpAdd
+	OpSubt
+	OpInput
+	OpOutput
+	OpHalt
+	OpSkipcond
+	OpJump
+	OpClear
+	OpAddI
+	OpJumpI
+)
 
 func Load(m *Machine, x Word) {
 	m.MAR = x

@@ -4,5 +4,5 @@ Add y		/ Load from location x (address 0x4)
 Output		/ print the output.
 Halt
 
-x, HEX FFFF
+x, HEX 2
 y, DEC 5

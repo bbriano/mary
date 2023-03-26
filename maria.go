@@ -20,7 +20,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 	}
 	defer f.Close()
-
 	m := &Machine{}
 	m.Load(f)
 	m.Run()
@@ -50,138 +49,11 @@ type Machine struct {
 // Word is the width of Marie's data bus.
 type Word uint16
 
-var symbol = regexp.MustCompile("^[A-Za-z][A-Za-z0-9]*$")
-var directive = regexp.MustCompile("^(DEC|HEX)$")
-var number = regexp.MustCompile("^[-+]?[0-9A-Fa-f]+$")
-var white = regexp.MustCompile("[ \t\n]+")
+// minWordInt is the minimum integer that can be represented with a Word (-32768).
+const minWordInt = -1 << 15
 
-// Load loads a Marie assembly program and assembles it to the machine's memory.
-func (m *Machine) Load(r io.Reader) {
-	b, err := io.ReadAll(r)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	lines := strings.Split(string(b), "\n")
-	symtab := make(map[string]Word)
-
-	// first pass. fill symbol table
-	for _, line := range lines {
-		tokens := tokenize(line)
-		switch len(tokens) {
-		case 0:
-			continue
-		case 4:
-		default:
-			m.PC++
-			continue
-		}
-		sym := symbol.FindString(tokens[0])
-		dir := directive.FindString(tokens[2])
-		num := number.FindString(tokens[3])
-		if tokens[1] != "," || sym == "" || dir == "" || num == "" {
-			fmt.Fprintln(os.Stderr, "syntax error:", line)
-			os.Exit(1)
-		}
-		symtab[sym] = m.PC
-		m.PC++
-	}
-	m.PC = 0
-
-	// second pass. fill m.M
-	for _, line := range lines {
-		tokens := tokenize(line)
-		switch len(tokens) {
-		case 0: // empty (or comment) lines
-		case 1:
-			switch opcode[tokens[0]] {
-			case OpInput:
-			case OpOutput:
-			case OpHalt:
-			case OpSkipcond:
-			case OpClear:
-			default:
-				fmt.Fprintln(os.Stderr, "syntax error:", line)
-				os.Exit(1)
-			}
-			m.M[m.PC] = Word(opcode[tokens[0]] << 12)
-			m.PC++
-		case 2:
-			switch opcode[tokens[0]] {
-			case OpJnS:
-			case OpLoad:
-			case OpStore:
-			case OpAdd:
-			case OpSubt:
-			case OpJump:
-			case OpAddI:
-			case OpJumpI:
-			default:
-				fmt.Fprintln(os.Stderr, "syntax error:", line)
-				os.Exit(1)
-			}
-			operand, ok := symtab[tokens[1]]
-			if !ok {
-				n, err := strconv.Atoi(tokens[1])
-				if err != nil {
-					fmt.Fprintln(os.Stderr, "syntax error:", line)
-					os.Exit(1)
-				}
-				operand = Word(n)
-			}
-			m.M[m.PC] = Word(opcode[tokens[0]] << 12)
-			m.M[m.PC] |= operand & 0xFFF
-			m.PC++
-		case 4:
-			if tokens[1] != "," {
-				fmt.Fprintln(os.Stderr, "syntax error:", line)
-				os.Exit(1)
-			}
-			n, err := parseint(tokens[2], tokens[3])
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "num too big:", line)
-				os.Exit(1)
-			}
-			m.M[m.PC] = n
-			m.PC++
-		default:
-			fmt.Fprintln(os.Stderr, "syntax error:", line)
-			os.Exit(1)
-		}
-	}
-	m.PC = 0
-}
-
-func tokenize(line string) []string {
-	line = strings.Split(line, "/")[0]
-	line = strings.ReplaceAll(line, ",", " , ")
-	line = white.ReplaceAllString(line, " ")
-	line = strings.Trim(line, " ")
-	var out []string
-	for _, s := range strings.Split(line, " ") {
-		if s != "" {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-func parseint(directive, num string) (Word, error) {
-	var base int
-	switch directive {
-	case "HEX":
-		base = 16
-	case "DEC":
-		base = 10
-	default:
-		panic("unreachable")
-	}
-	n, err := strconv.ParseInt(num, base, 17)
-	if err != nil {
-		return 0, err
-	}
-	return Word(n), nil
-}
+// maxWordInt is the maximum integer that can be represented with a Word (-65535).
+const maxWordInt = 1<<16 - 1
 
 // Run starts execution of the program stored in the machine's memory.
 func (m *Machine) Run() {
@@ -194,4 +66,198 @@ func (m *Machine) Run() {
 		operand := m.IR & 0xFFF
 		instruction[opcode](m, operand)
 	}
+}
+
+// Load loads a Marie assembly program and assembles it to the machine's memory.
+func (m *Machine) Load(r io.Reader) {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+	lines := strings.Split(string(raw), "\n")
+
+	// Construct symbolic table mapping identifier to address of identifier label.
+	symtab := make(map[string]Word)
+	var addr Word
+	for _, line := range lines {
+		tokens := tokenize(line)
+		switch len(tokens) {
+		case 0:
+			continue
+		case 1:
+			addr++
+			continue
+		}
+		switch hashTokens(tokens[:2]) {
+		case hashTokenTypes(TokenIdentifier, TokenComma):
+			identifier := tokens[0].str
+			symtab[identifier] = addr
+			addr++
+		default:
+			addr++
+		}
+	}
+
+	// second pass. fill m.M
+	addr = 0
+	for _, line := range lines {
+		tokens := tokenize(line)
+		if len(tokens) >= 2 {
+			switch hashTokens(tokens[:2]) {
+			case hashTokenTypes(TokenIdentifier, TokenComma):
+				tokens = tokens[2:]
+			}
+		}
+		switch hashTokens(tokens) {
+		case hashTokenTypes(): // empty (or comment) lines
+		case hashTokenTypes(TokenInstruction):
+			instruction := tokens[0].str
+			switch opcode[instruction] {
+			case OpInput:
+			case OpOutput:
+			case OpHalt:
+			case OpSkipcond:
+			case OpClear:
+			default:
+				syntaxerr(line)
+			}
+			m.M[addr] = Word(opcode[instruction] << 12)
+			addr++
+		case hashTokenTypes(TokenInstruction, TokenIdentifier):
+			instruction := tokens[0].str
+			identifier := tokens[1].str
+			switch opcode[instruction] {
+			case OpJnS:
+			case OpLoad:
+			case OpStore:
+			case OpAdd:
+			case OpSubt:
+			case OpJump:
+			case OpAddI:
+			case OpJumpI:
+			default:
+				syntaxerr(line)
+			}
+			m.M[addr] = Word(opcode[instruction] << 12)
+			m.M[addr] |= symtab[identifier] & 0xFFF
+			addr++
+		case hashTokenTypes(TokenInstruction, TokenNumber):
+			instruction := tokens[0].str
+			number := tokens[1].str
+			switch opcode[instruction] {
+			case OpJnS:
+			case OpLoad:
+			case OpStore:
+			case OpAdd:
+			case OpSubt:
+			case OpJump:
+			case OpAddI:
+			case OpJumpI:
+			default:
+				syntaxerr(line)
+			}
+			m.M[addr] = Word(opcode[instruction] << 12)
+			n, err := strconv.Atoi(number)
+			fmt.Println(n, minWordInt, maxWordInt)
+			if err != nil || n < minWordInt || n > maxWordInt {
+				syntaxerr(line)
+			}
+			m.M[addr] |= Word(n & 0xFFF)
+			addr++
+		case hashTokenTypes(TokenDirective, TokenNumber):
+			directive := tokens[0].str
+			number := tokens[1].str
+			var base int
+			switch directive {
+			case "HEX":
+				base = 16
+			case "DEC":
+				base = 10
+			default:
+				panic("unreachable")
+			}
+			n, err := strconv.ParseInt(number, base, 17)
+			if err != nil || n < minWordInt || n > maxWordInt {
+				syntaxerr(line)
+			}
+			m.M[addr] |= Word(n)
+			addr++
+		default:
+			syntaxerr(line)
+		}
+	}
+}
+
+type Token struct {
+	typ TokenType
+	str string
+}
+
+type TokenType func(string) bool
+
+func TokenInstruction(s string) bool {
+	_, ok := opcode[s]
+	return ok
+}
+
+func TokenDirective(s string) bool {
+	return regexp.MustCompile(`^(DEC|HEX)$`).FindStringIndex(s) != nil
+}
+
+func TokenNumber(s string) bool {
+	return regexp.MustCompile(`^[-+]?[0-9A-Fa-f]+$`).FindStringIndex(s) != nil
+}
+
+func TokenIdentifier(s string) bool {
+	return regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`).FindStringIndex(s) != nil
+}
+
+func TokenComma(s string) bool {
+	return s == ","
+}
+
+func tokenize(line string) []Token {
+	var out []Token
+	line = strings.Split(line, "/")[0]
+	line = strings.ReplaceAll(line, ",", " , ")
+	line = regexp.MustCompile(`[ \t\n]+`).ReplaceAllString(line, " ")
+	line = strings.Trim(line, " ")
+	for _, s := range strings.Split(line, " ") {
+		if s == "" {
+			continue
+		}
+		switch {
+		case TokenInstruction(s):
+			out = append(out, Token{TokenInstruction, s})
+		case TokenDirective(s):
+			out = append(out, Token{TokenDirective, s})
+		case TokenNumber(s):
+			out = append(out, Token{TokenNumber, s})
+		case TokenIdentifier(s):
+			out = append(out, Token{TokenIdentifier, s})
+		case TokenComma(s):
+			out = append(out, Token{TokenComma, s})
+		default:
+			syntaxerr(line)
+		}
+	}
+	return out
+}
+
+func hashTokens(tokens []Token) string {
+	var ttypes []TokenType
+	for _, t := range tokens {
+		ttypes = append(ttypes, t.typ)
+	}
+	return hashTokenTypes(ttypes...)
+}
+
+func hashTokenTypes(ttypes ...TokenType) string {
+	return fmt.Sprint(ttypes)
+}
+
+func syntaxerr(line string) {
+	fmt.Fprintln(os.Stderr, "syntax error:", line)
+	panic("syntaxerr")
+	os.Exit(1)
 }
