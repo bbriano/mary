@@ -36,6 +36,8 @@ func init() {
 		"Clear":    OpClear,
 		"AddI":     OpAddI,
 		"JumpI":    OpJumpI,
+		"LoadI":    OpLoadI,
+		"StoreI":   OpStoreI,
 	}
 	instruction = map[Opcode]Instruction{
 		OpJnS:      JnS,
@@ -51,6 +53,8 @@ func init() {
 		OpClear:    Clear,
 		OpAddI:     AddI,
 		OpJumpI:    JumpI,
+		OpLoadI:    LoadI,
+		OpStoreI:   StoreI,
 	}
 }
 
@@ -68,6 +72,8 @@ const (
 	OpClear
 	OpAddI
 	OpJumpI
+	OpLoadI
+	OpStoreI
 )
 
 func Load(m *Machine, x Word) {
@@ -168,4 +174,20 @@ func JumpI(m *Machine, x Word) {
 	m.MAR = x
 	m.MBR = m.M[m.MAR]
 	m.PC = m.MBR
+}
+
+func LoadI(m *Machine, x Word) {
+	m.MAR = x
+	m.MBR = m.M[m.MAR]
+	m.MAR = m.MBR
+	m.MBR = m.M[m.MAR]
+	m.AC = m.MBR
+}
+
+func StoreI(m *Machine, x Word) {
+	m.MAR = x
+	m.MBR = m.M[m.MAR]
+	m.MAR = m.MBR
+	m.MBR = m.AC
+	m.M[m.MAR] = m.MBR
 }

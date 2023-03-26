@@ -135,6 +135,8 @@ func (m *Machine) Load(r io.Reader) {
 			case OpJump:
 			case OpAddI:
 			case OpJumpI:
+			case OpLoadI:
+			case OpStoreI:
 			default:
 				syntaxerr(line)
 			}
@@ -154,6 +156,8 @@ func (m *Machine) Load(r io.Reader) {
 			case OpJump:
 			case OpAddI:
 			case OpJumpI:
+			case OpLoadI:
+			case OpStoreI:
 			default:
 				syntaxerr(line)
 			}
