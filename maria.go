@@ -116,7 +116,6 @@ func (m *Machine) Load(r io.Reader) {
 			case OpInput:
 			case OpOutput:
 			case OpHalt:
-			case OpSkipcond:
 			case OpClear:
 			default:
 				syntaxerr(line)
@@ -132,6 +131,7 @@ func (m *Machine) Load(r io.Reader) {
 			case OpStore:
 			case OpAdd:
 			case OpSubt:
+			case OpSkipcond:
 			case OpJump:
 			case OpAddI:
 			case OpJumpI:
@@ -150,6 +150,7 @@ func (m *Machine) Load(r io.Reader) {
 			case OpStore:
 			case OpAdd:
 			case OpSubt:
+			case OpSkipcond:
 			case OpJump:
 			case OpAddI:
 			case OpJumpI:
