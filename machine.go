@@ -58,9 +58,10 @@ func (m *Machine) Load(f *os.File) {
 	case nil:
 	case SyntaxError:
 		if err.error == nil {
-			fmt.Fprintf(os.Stderr, "syntax: %s:%d: %s", f.Name(), err.lineNo, err.line)
+			fmt.Fprintf(os.Stderr, "syntax: %s:%d: %s\n", f.Name(), err.lineNo, err.line)
+		} else {
+			fmt.Fprintf(os.Stderr, "syntax: %s: %s:%d: %s\n", err.error, f.Name(), err.lineNo, err.line)
 		}
-		fmt.Fprintf(os.Stderr, "syntax: %s: %s:%d: %s", err.error, f.Name(), err.lineNo, err.line)
 		os.Exit(1)
 	default:
 		fmt.Fprintln(os.Stderr, err)

@@ -28,6 +28,7 @@ var opcode map[string]Opcode = map[string]Opcode{
 	"JumpI":    OpJumpI,
 	"LoadI":    OpLoadI,
 	"StoreI":   OpStoreI,
+	"Dump":     OpDump,
 }
 
 // Instruction encodes the execute operation of an instruction.
@@ -51,6 +52,7 @@ var instruction map[Opcode]Instruction = map[Opcode]Instruction{
 	OpJumpI:    JumpI,
 	OpLoadI:    LoadI,
 	OpStoreI:   StoreI,
+	OpDump:     Dump,
 }
 
 const (
@@ -69,6 +71,7 @@ const (
 	OpJumpI
 	OpLoadI
 	OpStoreI
+	OpDump
 )
 
 func Load(m *Machine, x Word) {
@@ -189,4 +192,20 @@ func StoreI(m *Machine, x Word) {
 	m.MAR = m.MBR
 	m.MBR = m.AC
 	m.M[m.MAR] = m.MBR
+}
+
+func Dump(m *Machine, x Word) {
+	fmt.Printf("AC=%d PC=%d MAR=%d MBR=%d IR=%d IN=%d OUT=%d\n",
+		m.AC, m.PC, m.MAR, m.MBR, m.IR, m.IN, m.OUT)
+	rows := int((x-1)/16) + 1
+	for i := 0; i < rows; i++ {
+		fmt.Printf("%04X:", i*16)
+		for j := 0; j < 16; j++ {
+			if i*16+j == int(x) {
+				break
+			}
+			fmt.Printf(" %04X", m.M[i*16+j])
+		}
+		fmt.Println()
+	}
 }

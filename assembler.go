@@ -83,6 +83,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			case OpJumpI:
 			case OpLoadI:
 			case OpStoreI:
+			case OpDump:
 			default:
 				return nil, SyntaxError{lineNo, line, nil}
 			}
@@ -103,6 +104,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			case OpJumpI:
 			case OpLoadI:
 			case OpStoreI:
+			case OpDump:
 			default:
 				return nil, SyntaxError{lineNo, line, nil}
 			}
