@@ -103,10 +103,12 @@ func Input(m *Machine, _ Word) {
 		var err error
 		hex := s.Text()
 		x, err = strconv.ParseInt(hex, 16, 0)
-		if err == nil && minWordInt <= x && x <= maxWordInt {
-			break
+		if err != nil || x < minWordInt || x > maxWordInt {
+			fmt.Fprintln(os.Stderr, "bad input")
+			fmt.Print("> ")
+			continue
 		}
-		fmt.Print("> ")
+		break
 	}
 	m.IN = Word(x)
 	m.AC = m.IN
