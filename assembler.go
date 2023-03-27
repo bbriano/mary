@@ -149,30 +149,37 @@ func (s SyntaxError) Error() string {
 	return fmt.Sprintf("syntax: line %d: %s: %s", s.lineNo, s.error, s.line)
 }
 
+// Token is the smallest sub-string unit of the src.
 type Token struct {
 	typ TokenType
 	str string
 }
 
+// TokenType is a function that returns true if the string is a TokenType. It is used to classify Token.
 type TokenType func(string) bool
 
+// TokenInstruction is a TokenType for instructions. eg., "Load" or "Add".
 func TokenInstruction(s string) bool {
 	_, ok := opcode[s]
 	return ok
 }
 
+// TokenDirective is a TokenType for directives. eg., "DEC" or "HEX".
 func TokenDirective(s string) bool {
 	return regexp.MustCompile(`^(DEC|HEX)$`).FindStringIndex(s) != nil
 }
 
+// TokenNumber is a TokenType for numbers. eg., "15" or "0xF".
 func TokenNumber(s string) bool {
 	return regexp.MustCompile(`^[-+]?[0-9A-Fa-f]+$`).FindStringIndex(s) != nil
 }
 
+// TokenIdentifier is a TokenType for identifiers. eg., "var" or "x1".
 func TokenIdentifier(s string) bool {
 	return regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`).FindStringIndex(s) != nil
 }
 
+// TokenComma is a TokenType for commas. eg., ",".
 func TokenComma(s string) bool {
 	return s == ","
 }

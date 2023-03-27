@@ -7,9 +7,6 @@ import (
 	"strconv"
 )
 
-// Instruction corresponds to a single machine instruction in a Marie machine.
-type Instruction func(*Machine, Word)
-
 // Opcode is the 4-bit operation code of an instruction.
 type Opcode int
 
@@ -32,6 +29,9 @@ var opcode map[string]Opcode = map[string]Opcode{
 	"LoadI":    OpLoadI,
 	"StoreI":   OpStoreI,
 }
+
+// Instruction encodes the execute operation of an instruction.
+type Instruction func(*Machine, Word)
 
 // instruction maps opcode to Instruction functions.
 // It is used to decode the machine code in Machine.Run.
