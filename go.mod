@@ -1,3 +1,3 @@
-module github.com/bbriano/maria
+module github.com/bbriano/mary
 
 go 1.20
