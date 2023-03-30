@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Assemble assembles src.
+// Assemble assembles src. It returns SyntaxError on syntax error.
 func Assemble(src io.Reader) ([]Word, error) {
 	raw, err := io.ReadAll(src)
 	if err != nil {
@@ -19,16 +19,17 @@ func Assemble(src io.Reader) ([]Word, error) {
 	// symtab is mapping identifier to address of identifier label.
 	symtab := make(map[string]Word)
 
-	// first pass; fill symtab.
+	// First pass; fill symtab.
 	var addr Word
 	for i, line := range lines {
 		lineNo := i + 1
 		tokens, err := tokenize(line)
 		if err != nil {
-			return nil, SyntaxError{lineNo, line, err}
+			return nil, SyntaxError{lineNo, line}
 		}
 		switch len(tokens) {
 		case 0:
+			// Skip without incrementing address index on empty lines.
 			continue
 		case 1:
 			addr++
@@ -38,17 +39,19 @@ func Assemble(src io.Reader) ([]Word, error) {
 		case hashTokenTypes(TokenIdentifier, TokenComma):
 			identifier := tokens[0].str
 			symtab[identifier] = addr
-			addr++
-		default:
-			addr++
 		}
+		addr++
 	}
 
-	// second pass; write to out.
+	// Second pass; write to out.
 	var out []Word
 	for i, line := range lines {
 		lineNo := i + 1
-		tokens, _ := tokenize(line) // error already checked in first pass
+		tokens, err := tokenize(line)
+		if err != nil {
+			// unreachable; already checked in first pass
+			panic(err)
+		}
 		if len(tokens) >= 2 {
 			switch hashTokens(tokens[:2]) {
 			case hashTokenTypes(TokenIdentifier, TokenComma):
@@ -65,7 +68,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			case OpHalt:
 			case OpClear:
 			default:
-				return nil, SyntaxError{lineNo, line, nil}
+				return nil, SyntaxError{lineNo, line}
 			}
 			out = append(out, Word(opcode[instruction]<<12))
 		case hashTokenTypes(TokenInstruction, TokenIdentifier):
@@ -85,7 +88,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			case OpStoreI:
 			case OpDump:
 			default:
-				return nil, SyntaxError{lineNo, line, nil}
+				return nil, SyntaxError{lineNo, line}
 			}
 			out = append(out, Word(opcode[instruction]<<12))
 			out[len(out)-1] |= symtab[identifier] & 0xFFF
@@ -106,12 +109,12 @@ func Assemble(src io.Reader) ([]Word, error) {
 			case OpStoreI:
 			case OpDump:
 			default:
-				return nil, SyntaxError{lineNo, line, nil}
+				return nil, SyntaxError{lineNo, line}
 			}
 			out = append(out, Word(opcode[instruction]<<12))
-			n, err := strconv.ParseInt(number, 16, 0)
-			if err != nil || n < minWordInt || n > maxWordInt {
-				return nil, SyntaxError{lineNo, line, err}
+			n, err := parseWord(number, 16)
+			if err != nil {
+				return nil, SyntaxError{lineNo, line}
 			}
 			out[len(out)-1] |= Word(n & 0xFFF)
 		case hashTokenTypes(TokenDirective, TokenNumber):
@@ -126,29 +129,33 @@ func Assemble(src io.Reader) ([]Word, error) {
 			default:
 				panic("unreachable")
 			}
-			n, err := strconv.ParseInt(number, base, 0)
-			if err != nil || n < minWordInt || n > maxWordInt {
-				return nil, SyntaxError{lineNo, line, err}
+			n, err := parseWord(number, base)
+			if err != nil {
+				return nil, SyntaxError{lineNo, line}
 			}
 			out = append(out, Word(n))
 		default:
-			return nil, SyntaxError{lineNo, line, nil}
+			return nil, SyntaxError{lineNo, line}
 		}
 	}
 	return out, nil
 }
 
+func parseWord(num string, base int) (Word, error) {
+	out, err := strconv.ParseInt(num, base, 0)
+	if err != nil || out < minWordInt || out > maxWordInt {
+		return 0, err
+	}
+	return Word(out), nil
+}
+
 type SyntaxError struct {
 	lineNo int
 	line   string
-	error
 }
 
 func (s SyntaxError) Error() string {
-	if s.error == nil {
-		return fmt.Sprintf("syntax: line %d: %s", s.lineNo, s.line)
-	}
-	return fmt.Sprintf("syntax: line %d: %s: %s", s.lineNo, s.error, s.line)
+	return fmt.Sprintf("syntax: line %d: %s", s.lineNo, s.line)
 }
 
 // Token is the smallest sub-string unit of the src.

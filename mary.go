@@ -18,7 +18,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer f.Close()
-	m := &Machine{}
-	m.Load(f)
+	m := new(Machine)
+	err = m.Load(f)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	m.Run()
 }

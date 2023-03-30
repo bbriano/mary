@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 )
 
 // Opcode is the 4-bit operation code of an instruction.
@@ -99,21 +98,21 @@ func Subt(m *Machine, x Word) {
 }
 
 func Input(m *Machine, _ Word) {
-	var x int64
+	var x Word
 	s := bufio.NewScanner(os.Stdin)
 	fmt.Print("> ")
 	for s.Scan() {
 		var err error
 		hex := s.Text()
-		x, err = strconv.ParseInt(hex, 16, 0)
-		if err != nil || x < minWordInt || x > maxWordInt {
+		x, err = parseWord(hex, 16)
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "bad input")
 			fmt.Print("> ")
 			continue
 		}
 		break
 	}
-	m.IN = Word(x)
+	m.IN = x
 	m.AC = m.IN
 }
 
