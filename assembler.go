@@ -180,7 +180,7 @@ func TokenDirective(s string) bool {
 
 // TokenNumber is a TokenType for numbers. eg., "15" or "0xF".
 func TokenNumber(s string) bool {
-	return regexp.MustCompile(`^[-+]?[0-9A-Fa-f]+$`).FindStringIndex(s) != nil
+	return regexp.MustCompile(`^[-+]?[0-9][0-9A-Fa-f]*$`).FindStringIndex(s) != nil
 }
 
 // TokenIdentifier is a TokenType for identifiers. eg., "var" or "x1".
