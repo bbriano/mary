@@ -143,8 +143,11 @@ func Assemble(src io.Reader) ([]Word, error) {
 
 func parseWord(num string, base int) (Word, error) {
 	out, err := strconv.ParseInt(num, base, 0)
-	if err != nil || out < minWordInt || out > maxWordInt {
+	if err != nil {
 		return 0, err
+	}
+	if out < -1<<15 || out > 0xFFFF {
+		return 0, fmt.Errorf("parseWord: parsing %q: out of range", num)
 	}
 	return Word(out), nil
 }

@@ -8,12 +8,6 @@ import (
 // Word is the machine's 16 bit data bus.
 type Word int
 
-// minWordInt is the minimum integer that can be represented with a Word.
-const minWordInt = -1 << 15 // -32768
-
-// maxWordInt is the maximum integer that can be represented with a Word.
-const maxWordInt = 0xFFFF // 65535
-
 // machineMemory is the number of words in the machine's 12-bit addressed memory.
 const machineMemory = 1 << 12 // 4096
 

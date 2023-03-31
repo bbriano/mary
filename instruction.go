@@ -106,7 +106,7 @@ func Input(m *Machine, _ Word) {
 		hex := s.Text()
 		x, err = parseWord(hex, 16)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "bad input")
+			fmt.Fprintln(os.Stderr, err)
 			fmt.Print("> ")
 			continue
 		}
