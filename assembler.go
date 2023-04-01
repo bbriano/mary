@@ -91,7 +91,11 @@ func Assemble(src io.Reader) ([]Word, error) {
 				return nil, SyntaxError{lineNo, line}
 			}
 			out = append(out, Word(opcode[instruction]<<12))
-			out[len(out)-1] |= symtab[identifier] & 0xFFF
+			n, ok := symtab[identifier]
+			if !ok {
+				return nil, SyntaxError{lineNo, line}
+			}
+			out[len(out)-1] |= n & 0xFFF
 		case hashTokenTypes(TokenInstruction, TokenNumber):
 			instruction := tokens[0].str
 			number := tokens[1].str
@@ -116,7 +120,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			if err != nil {
 				return nil, SyntaxError{lineNo, line}
 			}
-			out[len(out)-1] |= Word(n & 0xFFF)
+			out[len(out)-1] |= n & 0xFFF
 		case hashTokenTypes(TokenDirective, TokenNumber):
 			directive := tokens[0].str
 			number := tokens[1].str
@@ -133,7 +137,7 @@ func Assemble(src io.Reader) ([]Word, error) {
 			if err != nil {
 				return nil, SyntaxError{lineNo, line}
 			}
-			out = append(out, Word(n))
+			out = append(out, n)
 		default:
 			return nil, SyntaxError{lineNo, line}
 		}
